@@ -1,0 +1,100 @@
+﻿<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Task Flow — современный трекер задач с фильтрами, сортировкой, поиском и локальным хранением." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Task Flow — Smart Todo Experience" />
+  <meta property="og:description" content="Современный трекер задач с продуманным UX, анимациями и чистым визуалом." />
+  <meta property="og:image" content="./assets/og/og-image.svg" />
+  <meta property="og:locale" content="ru_RU" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Task Flow — Smart Todo Experience" />
+  <meta name="twitter:description" content="Современный трекер задач с продуманным UX, анимациями и чистым визуалом." />
+  <meta name="twitter:image" content="./assets/og/og-image.svg" />
+  <title>Task Flow</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/icons/favicon.svg" />
+  <link rel="stylesheet" href="./src/css/styles.css" />
+</head>
+
+
+<body>
+  <main>
+    <header class="site-header">
+      <div class="brand-badge" aria-label="Task Flow Brand Badge">
+        <span class="brand-badge__dot"></span>
+        <span class="brand-badge__text">Task Flow UI</span>
+      </div>
+      <p class="site-kicker">Personal productivity system</p>
+      <h1 class="site-title">Task Flow</h1>
+      <p class="site-subtitle">Личный трекер задач с акцентом на ритм, фокус и визуальную чистоту.</p>
+    </header>
+
+    <section class="tasks">
+      <div class="container">
+        <div class="tasks__wrapper">
+          <section class="tasks__composer">
+            <p class="tasks__label">Новая задача</p>
+            <div class="tasks__composer-row">
+              <input id="taskInput" placeholder="Введите задачу" aria-label="Текст новой задачи" />
+              <input id="deadlineInput" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" aria-label="Дедлайн задачи" />
+              <select name="prioritySelect" id="prioritySelect" aria-label="Приоритет задачи">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+              <button id="addBtn" type="button">Добавить</button>
+            </div>
+          </section>
+
+          <p id="taskCounter" class="tasks__counter"></p>
+
+          <section class="tasks__controls">
+            <div class="tasks__panel">
+              <p class="tasks__panel-title">Поиск</p>
+              <div class="tasks__search">
+                <label class="tasks__label" for="searchInput">Поиск задачи</label>
+                <input id="searchInput" placeholder="Найти задачу по тексту" />
+              </div>
+            </div>
+
+            <div class="tasks__panel">
+              <p class="tasks__panel-title">Фильтры</p>
+              <div class="tasks__filters">
+                <button id="filterAll" type="button">Все</button>
+                <button id="filterActive" type="button">Активные</button>
+                <button id="filterDone" type="button">Выполненные</button>
+                <button id="clearDone" type="button">Очистить выполненные</button>
+              </div>
+            </div>
+
+            <div class="tasks__panel">
+              <p class="tasks__panel-title">Сортировка</p>
+              <div class="tasks__sort">
+                <button id="sortNewest" type="button">Сначала новые</button>
+                <button id="sortOldest" type="button">Сначала старые</button>
+                <button id="sortPriority" type="button">По приоритету</button>
+                <button id="sortDeadline" type="button">По дедлайну</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="tasks__list-block">
+            <p class="tasks__panel-title">Список задач</p>
+            <ul id="taskList"></ul>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <small>Task Flow — 2026</small>
+  </footer>
+
+  <script src="./src/js/app.js"></script>
+</body>
+
+</html>
