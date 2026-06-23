@@ -16,6 +16,9 @@
   <meta name="twitter:image" content="./assets/og/og-image.svg" />
   <title>Task Flow</title>
   <link rel="icon" type="image/svg+xml" href="./assets/icons/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./src/css/styles.css" />
 </head>
 
@@ -38,14 +41,14 @@
           <section class="tasks__composer">
             <p class="tasks__label">Новая задача</p>
             <div class="tasks__composer-row">
-              <input id="taskInput" placeholder="Введите задачу" aria-label="Текст новой задачи" />
-              <input id="deadlineInput" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" aria-label="Дедлайн задачи" />
-              <select name="prioritySelect" id="prioritySelect" aria-label="Приоритет задачи">
+              <input class="tasks__input" id="taskInput" placeholder="Введите задачу" aria-label="Текст новой задачи" />
+              <input class="tasks__deadline-input" id="deadlineInput" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" aria-label="Дедлайн задачи" />
+              <select class="tasks__priority-select" name="prioritySelect" id="prioritySelect" aria-label="Приоритет задачи">
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
-              <button id="addBtn" type="button">Добавить</button>
+              <button class="btn btn-add btn--icon" id="addBtn" type="button">Добавить</button>
             </div>
           </section>
 
@@ -55,34 +58,34 @@
             <div class="tasks__panel">
               <p class="tasks__panel-title">Поиск</p>
               <div class="tasks__search">
-                <input id="searchInput" placeholder="Найти задачу по тексту" />
+                <input class="tasks__search-input" id="searchInput" placeholder="Найти задачу по тексту" />
               </div>
             </div>
 
             <div class="tasks__panel">
               <p class="tasks__panel-title">Фильтры</p>
               <div class="tasks__filters">
-                <button id="filterAll" type="button">Все</button>
-                <button id="filterActive" type="button">Активные</button>
-                <button id="filterDone" type="button">Выполненные</button>
-                <button id="clearDone" type="button">Очистить выполненные</button>
+                <button class="btn btn-secondary btn--icon" id="filterAll" type="button">Все</button>
+                <button class="btn btn-secondary btn--icon" id="filterActive" type="button">Активные</button>
+                <button class="btn btn-secondary btn--icon" id="filterDone" type="button">Выполненные</button>
+                <button class="btn btn-danger btn--icon" id="clearDone" type="button">Очистить выполненные</button>
               </div>
             </div>
 
             <div class="tasks__panel">
               <p class="tasks__panel-title">Сортировка</p>
               <div class="tasks__sort">
-                <button id="sortNewest" type="button">Сначала новые</button>
-                <button id="sortOldest" type="button">Сначала старые</button>
-                <button id="sortPriority" type="button">По приоритету</button>
-                <button id="sortDeadline" type="button">По дедлайну</button>
+                <button class="btn btn-secondary btn--icon" id="sortNewest" type="button">Сначала новые</button>
+                <button class="btn btn-secondary btn--icon" id="sortOldest" type="button">Сначала старые</button>
+                <button class="btn btn-secondary btn--icon" id="sortPriority" type="button">По приоритету</button>
+                <button class="btn btn-secondary btn--icon" id="sortDeadline" type="button">По дедлайну</button>
               </div>
             </div>
           </section>
 
           <section class="tasks__list-block">
             <p class="tasks__panel-title">Список задач</p>
-            <ul id="taskList"></ul>
+            <ul class="tasks-list" id="taskList"></ul>
           </section>
         </div>
       </div>
@@ -97,3 +100,8 @@
 </body>
 
 </html>
+
+
+
+
+

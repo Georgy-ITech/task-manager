@@ -86,30 +86,98 @@ function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function getEmptyStateMarkup(title, subtitle) {
-  return `
-    <div class="tasks-empty">
-      <svg class="tasks-empty__icon" viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="emptyG" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stop-color="#2149ff"></stop>
-            <stop offset="1" stop-color="#19b4ff"></stop>
-          </linearGradient>
-        </defs>
-        <rect x="10" y="8" width="44" height="50" rx="10" fill="url(#emptyG)" opacity="0.18"></rect>
-        <rect x="16" y="18" width="32" height="4" rx="2" fill="#3554aa"></rect>
-        <rect x="16" y="28" width="24" height="4" rx="2" fill="#5e76bf"></rect>
-        <rect x="16" y="38" width="18" height="4" rx="2" fill="#7f92ca"></rect>
-      </svg>
-      <p class="tasks-empty__title">${title}</p>
-      <p class="tasks-empty__subtitle">${subtitle}</p>
-    </div>
-  `;
+function appendHighlightedText(element, text, query) {
+  if (query === "") {
+    element.textContent = text;
+    return;
+  }
+
+  const expression = new RegExp(escapeRegExp(query), "gi");
+  let currentIndex = 0;
+  let match = expression.exec(text);
+
+  while (match !== null) {
+    if (match.index > currentIndex) {
+      element.append(document.createTextNode(text.slice(currentIndex, match.index)));
+    }
+
+    const mark = document.createElement("mark");
+    mark.textContent = match[0];
+    element.append(mark);
+
+    currentIndex = match.index + match[0].length;
+    match = expression.exec(text);
+  }
+
+  if (currentIndex < text.length) {
+    element.append(document.createTextNode(text.slice(currentIndex)));
+  }
 }
 
+function createEmptyState(title, subtitle) {
+  const emptyState = document.createElement("div");
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+  const firstStop = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+  const secondStop = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+  const cardShape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  const firstLine = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  const secondLine = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  const thirdLine = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  const titleElement = document.createElement("p");
+  const subtitleElement = document.createElement("p");
 
+  emptyState.className = "tasks-empty";
+  icon.classList.add("tasks-empty__icon");
+  icon.setAttribute("viewBox", "0 0 64 64");
+  icon.setAttribute("aria-hidden", "true");
 
+  gradient.id = "emptyG";
+  gradient.setAttribute("x1", "8");
+  gradient.setAttribute("y1", "8");
+  gradient.setAttribute("x2", "56");
+  gradient.setAttribute("y2", "56");
+  gradient.setAttribute("gradientUnits", "userSpaceOnUse");
 
+  firstStop.setAttribute("offset", "0");
+  firstStop.setAttribute("stop-color", "#2149ff");
+  secondStop.setAttribute("offset", "1");
+  secondStop.setAttribute("stop-color", "#19b4ff");
+
+  cardShape.setAttribute("x", "10");
+  cardShape.setAttribute("y", "8");
+  cardShape.setAttribute("width", "44");
+  cardShape.setAttribute("height", "50");
+  cardShape.setAttribute("rx", "10");
+  cardShape.setAttribute("fill", "url(#emptyG)");
+  cardShape.setAttribute("opacity", "0.18");
+
+  [
+    { element: firstLine, width: "32", y: "18", fill: "#3554aa" },
+    { element: secondLine, width: "24", y: "28", fill: "#5e76bf" },
+    { element: thirdLine, width: "18", y: "38", fill: "#7f92ca" },
+  ].forEach(function (line) {
+    line.element.setAttribute("x", "16");
+    line.element.setAttribute("y", line.y);
+    line.element.setAttribute("width", line.width);
+    line.element.setAttribute("height", "4");
+    line.element.setAttribute("rx", "2");
+    line.element.setAttribute("fill", line.fill);
+  });
+
+  titleElement.className = "tasks-empty__title";
+  titleElement.textContent = title;
+  subtitleElement.className = "tasks-empty__subtitle";
+  subtitleElement.textContent = subtitle;
+
+  gradient.append(firstStop, secondStop);
+  defs.append(gradient);
+  icon.append(defs, cardShape, firstLine, secondLine, thirdLine);
+  emptyState.append(icon, titleElement, subtitleElement);
+
+  return emptyState;
+}
 function safeParseJson(json, fallbackValue) {
   try {
     return JSON.parse(json);
@@ -329,34 +397,7 @@ function initCustomPrioritySelect() {
   setSelected(selectedIndex);
 }
 
-document.querySelectorAll("button").forEach(function (button) {
-  button.classList.add("btn");
-});
 
-taskList.classList.add("tasks-list");
-addButton.classList.add("btn-add");
-filterAll.classList.add("btn-secondary");
-filterActive.classList.add("btn-secondary");
-filterDone.classList.add("btn-secondary");
-sortNewest.classList.add("btn-secondary");
-sortOldest.classList.add("btn-secondary");
-sortPriority.classList.add("btn-secondary");
-sortDeadline.classList.add("btn-secondary");
-clearDone.classList.add("btn-danger");
-
-[
-  addButton,
-  filterAll,
-  filterActive,
-  filterDone,
-  clearDone,
-  sortNewest,
-  sortOldest,
-  sortPriority,
-  sortDeadline,
-].forEach(function (button) {
-  button.classList.add("btn--icon");
-});
 
 initCustomPrioritySelect();
 initCustomDatePicker();
@@ -428,27 +469,32 @@ function addTask() {
   deadlineInput.value = "";
 }
 
-function renderTasks() {
-  taskList.innerHTML = "";
-
+function getTaskStats() {
   const doneTasks = tasks.filter(function (task) {
-    return task.done
+    return task.done;
   });
-
   const activeTasks = tasks.filter(function (task) {
-    return !task.done
+    return !task.done;
   });
 
-  clearDone.disabled = doneTasks.length === 0;
+  return {
+    activeCount: activeTasks.length,
+    doneCount: doneTasks.length,
+    totalCount: tasks.length,
+  };
+}
 
-  taskCounter.textContent = `Всего задач: ${tasks.length}, выполненных задач: ${doneTasks.length}`;
+function updateTaskSummary(stats) {
+  clearDone.disabled = stats.doneCount === 0;
+  taskCounter.textContent = `Всего задач: ${stats.totalCount}, выполненных задач: ${stats.doneCount}`;
+  filterAll.textContent = `Все (${stats.totalCount})`;
+  filterActive.textContent = `Активные (${stats.activeCount})`;
+  filterDone.textContent = `Выполненные (${stats.doneCount})`;
+}
+
+function getFilteredTasks() {
   let filteredTasks = [...tasks];
   let emptyMessageText = "Задач пока нет";
-
-  filterAll.textContent = `Все (${tasks.length})`;
-  filterActive.textContent = `Активные (${activeTasks.length})`;
-  filterDone.textContent = `Выполненные (${doneTasks.length})`;
-
 
   if (currentFilter === "active") {
     filteredTasks = filteredTasks.filter(function (task) {
@@ -477,32 +523,42 @@ function renderTasks() {
     emptyMessageText = "По запросу ничего не найдено";
   }
 
+  return {
+    emptyMessageText: emptyMessageText,
+    tasks: filteredTasks,
+  };
+}
+
+function sortTasks(taskItems) {
+  const sortedTasks = [...taskItems];
+
   if (currentSort === "newest") {
-    filteredTasks = filteredTasks.sort(function (a, b) {
+    setActiveButton(SORT_BUTTONS, sortNewest);
+    return sortedTasks.sort(function (a, b) {
       return b.createdAtTimestamp - a.createdAtTimestamp;
     });
-    setActiveButton(SORT_BUTTONS, sortNewest);
   }
 
   if (currentSort === "oldest") {
-    filteredTasks = filteredTasks.sort(function (a, b) {
+    setActiveButton(SORT_BUTTONS, sortOldest);
+    return sortedTasks.sort(function (a, b) {
       return a.createdAtTimestamp - b.createdAtTimestamp;
     });
-    setActiveButton(SORT_BUTTONS, sortOldest);
   }
 
   if (currentSort === "priority") {
-    filteredTasks = filteredTasks.sort(function (a, b) {
+    setActiveButton(SORT_BUTTONS, sortPriority);
+    return sortedTasks.sort(function (a, b) {
       if (PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority] !== 0) {
         return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
       }
       return b.createdAtTimestamp - a.createdAtTimestamp;
     });
-    setActiveButton(SORT_BUTTONS, sortPriority);
   }
 
   if (currentSort === "deadline") {
-    filteredTasks = filteredTasks.sort(function (a, b) {
+    setActiveButton(SORT_BUTTONS, sortDeadline);
+    return sortedTasks.sort(function (a, b) {
       if (!a.deadline && b.deadline) {
         return 1;
       }
@@ -517,259 +573,322 @@ function renderTasks() {
       }
       return b.createdAtTimestamp - a.createdAtTimestamp;
     });
-    setActiveButton(SORT_BUTTONS, sortDeadline);
   }
 
-  if (filteredTasks.length === 0) {
-    const emptyMessage = document.createElement("li");
-    emptyMessage.className = "tasks-list__item tasks-list__item--empty";
-    emptyMessage.innerHTML = getEmptyStateMarkup(
-      emptyMessageText,
-      "Добавьте новую задачу или измените фильтры, чтобы увидеть результаты."
-    );
-    taskList.append(emptyMessage);
+  return sortedTasks;
+}
+
+function renderEmptyState(title) {
+  const emptyMessage = document.createElement("li");
+  emptyMessage.className = "tasks-list__item tasks-list__item--empty";
+  emptyMessage.append(createEmptyState(
+    title,
+    "Добавьте новую задачу или измените фильтры, чтобы увидеть результаты."
+  ));
+  taskList.append(emptyMessage);
+}
+
+function createPriorityBadge(priority) {
+  const taskPriority = document.createElement("span");
+  taskPriority.className = "tasks__priority";
+  taskPriority.textContent = priority;
+
+  if (priority === "low") {
+    taskPriority.classList.add("tasks__priority--low");
+  }
+  if (priority === "medium") {
+    taskPriority.classList.add("tasks__priority--medium");
+  }
+  if (priority === "high") {
+    taskPriority.classList.add("tasks__priority--high");
+  }
+
+  return taskPriority;
+}
+
+function createTaskDate(createdAt) {
+  const taskDate = document.createElement("span");
+  taskDate.className = "tasks__date";
+  taskDate.textContent = `Создано: ${createdAt}`;
+
+  return taskDate;
+}
+
+function createTaskDeadline(task, isOverdue) {
+  if (!task.deadline) {
+    return null;
+  }
+
+  const taskDeadline = document.createElement("span");
+  taskDeadline.className = "tasks__deadline";
+  taskDeadline.textContent = `Дедлайн: ${task.deadline}`;
+
+  if (isOverdue) {
+    taskDeadline.textContent = `Просрочено: ${task.deadline}`;
+  }
+
+  return taskDeadline;
+}
+
+function updateTask(taskId, values) {
+  tasks = tasks.map(function (item) {
+    if (item.id === taskId) {
+      return {
+        ...item,
+        ...values,
+      };
+    }
+    return item;
+  });
+
+  saveTasks();
+  renderTasks();
+}
+
+function createEditForm(task) {
+  const editWrapper = document.createElement("div");
+  const editTextInput = document.createElement("input");
+  const editPrioritySelect = document.createElement("select");
+  const editDeadlineInput = document.createElement("input");
+  const btnSaveEdit = document.createElement("button");
+  const btnCancelEdit = document.createElement("button");
+
+  editWrapper.classList.add("tasks__edit-wrapper");
+  editTextInput.value = task.text;
+  editTextInput.classList.add("tasks__edit-input");
+  editDeadlineInput.type = "date";
+  editDeadlineInput.value = task.deadline;
+  editDeadlineInput.classList.add("tasks__edit-input");
+  editPrioritySelect.classList.add("tasks__edit-select");
+
+  ["low", "medium", "high"].forEach(function (priorityValue) {
+    const option = document.createElement("option");
+    option.value = priorityValue;
+    option.textContent = priorityValue;
+
+    if (priorityValue === task.priority) {
+      option.selected = true;
+    }
+
+    editPrioritySelect.append(option);
+  });
+
+  btnSaveEdit.textContent = "Сохранить";
+  btnSaveEdit.classList.add("btn", "btn-item", "btn-success", "btn--icon", "btn-save");
+  btnSaveEdit.addEventListener("click", function () {
+    const trimmedText = editTextInput.value.trim();
+
+    if (trimmedText === "") {
+      alert("Название задачи не может быть пустым");
+      return;
+    }
+
+    const newDeadline = editDeadlineInput.value;
+
+    if (!isValidDeadline(newDeadline)) {
+      alert("Введите реальную дату в формате YYYY-MM-DD!");
+      return;
+    }
+
+    const today = getTodayString();
+
+    if (newDeadline !== "" && newDeadline < today) {
+      alert("Нельзя выбрать дату в прошлом");
+      return;
+    }
+
+    editingTaskId = null;
+    updateTask(task.id, {
+      deadline: newDeadline,
+      priority: editPrioritySelect.value,
+      text: trimmedText,
+    });
+  });
+
+  editTextInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      btnSaveEdit.click();
+    }
+  });
+
+  btnCancelEdit.textContent = "Отмена";
+  btnCancelEdit.classList.add("btn", "btn-item", "btn-secondary", "btn--icon", "btn-cancel");
+  btnCancelEdit.addEventListener("click", function () {
+    editingTaskId = null;
+    renderTasks();
+  });
+
+  editWrapper.append(editTextInput, editPrioritySelect, editDeadlineInput, btnSaveEdit, btnCancelEdit);
+
+  return editWrapper;
+}
+
+function deleteTask(taskId, element) {
+  let isRemoved = false;
+
+  function removeTask() {
+    if (isRemoved) {
+      return;
+    }
+
+    isRemoved = true;
+    tasks = tasks.filter(function (item) {
+      return item.id !== taskId;
+    });
+    saveTasks();
+    renderTasks();
+  }
+
+  element.classList.add("is-leaving");
+  element.addEventListener("animationend", removeTask, { once: true });
+  setTimeout(removeTask, 280);
+}
+
+function changeTaskPriority(taskId) {
+  tasks = tasks.map(function (item) {
+    if (item.id === taskId) {
+      let nextPriority;
+      if (item.priority === "low") {
+        nextPriority = "medium";
+      } else if (item.priority === "medium") {
+        nextPriority = "high";
+      } else {
+        nextPriority = "low";
+      }
+      return {
+        ...item,
+        priority: nextPriority,
+      };
+    }
+    return item;
+  });
+
+  saveTasks();
+  renderTasks();
+}
+
+function toggleTaskDone(taskId) {
+  toggledTaskId = taskId;
+  tasks = tasks.map(function (item) {
+    if (item.id === taskId) {
+      return {
+        ...item,
+        done: !item.done,
+      };
+    }
+    return item;
+  });
+
+  saveTasks();
+  renderTasks();
+}
+
+function createTaskActions(task, element) {
+  const btnWrapper = document.createElement("div");
+  const btnDone = document.createElement("button");
+  const btnDelete = document.createElement("button");
+  const btnPriority = document.createElement("button");
+  const btnEdit = document.createElement("button");
+
+  btnWrapper.className = "tasks-list__buttons";
+
+  btnDone.textContent = "Готово";
+  btnDone.classList.add("btn", "btn-item", "btn-success", "btn--icon", "btn-done");
+  btnDone.setAttribute("aria-label", `${task.done ? "Отметить как невыполненную" : "Отметить как выполненную"}: ${task.text}`);
+  btnDone.addEventListener("click", function () {
+    toggleTaskDone(task.id);
+  });
+
+  btnDelete.textContent = "Удалить";
+  btnDelete.classList.add("btn", "btn-item", "btn-danger", "btn--icon", "btn-delete");
+  btnDelete.setAttribute("aria-label", `Удалить задачу: ${task.text}`);
+  btnDelete.addEventListener("click", function () {
+    const isConfirmed = confirm("Удалить задачу?");
+    if (!isConfirmed) {
+      return;
+    }
+
+    deleteTask(task.id, element);
+  });
+
+  btnPriority.textContent = "Сменить приоритет";
+  btnPriority.classList.add("btn", "btn-item", "btn-secondary", "btn--icon", "btn-priority");
+  btnPriority.addEventListener("click", function () {
+    changeTaskPriority(task.id);
+  });
+
+  btnEdit.textContent = "Редактировать";
+  btnEdit.classList.add("btn", "btn-item", "btn-secondary", "btn--icon", "btn-edit");
+  btnEdit.addEventListener("click", function () {
+    editingTaskId = task.id;
+    renderTasks();
+  });
+
+  btnWrapper.append(btnDone, btnDelete, btnPriority, btnEdit);
+
+  return btnWrapper;
+}
+
+function createTaskElement(task) {
+  const li = document.createElement("li");
+  const taskText = document.createElement("span");
+  const taskInfoWrapper = document.createElement("div");
+  const today = getTodayString();
+  const isOverdue = task.deadline && !task.done && task.deadline < today;
+  const isEditing = editingTaskId === task.id;
+
+  li.className = "tasks-list__item";
+  taskInfoWrapper.className = "tasks__info";
+  taskText.className = "tasks__text";
+
+  if (task.id === enteringTaskId) {
+    li.classList.add("is-entering");
+  }
+  if (task.id === toggledTaskId) {
+    li.classList.add("is-toggled");
+  }
+  if (isOverdue) {
+    li.classList.add("tasks-list__item--overdue");
+  }
+  if (task.done) {
+    li.classList.add("done");
+  }
+
+  if (isEditing) {
+    taskInfoWrapper.append(createEditForm(task));
+    li.append(taskInfoWrapper);
+    return li;
+  }
+
+  appendHighlightedText(taskText, task.text, searchQuery);
+  taskInfoWrapper.append(taskText);
+  taskInfoWrapper.append(createPriorityBadge(task.priority), createTaskDate(task.createdAt));
+
+  const taskDeadline = createTaskDeadline(task, isOverdue);
+  if (taskDeadline) {
+    taskInfoWrapper.append(taskDeadline);
+  }
+
+  li.append(taskInfoWrapper, createTaskActions(task, li));
+
+  return li;
+}
+
+function renderTasks() {
+  taskList.innerHTML = "";
+
+  updateTaskSummary(getTaskStats());
+
+  const filteredResult = getFilteredTasks();
+  const sortedTasks = sortTasks(filteredResult.tasks);
+
+  if (sortedTasks.length === 0) {
+    renderEmptyState(filteredResult.emptyMessageText);
     return;
   }
 
-  filteredTasks.forEach(function (task) {
-    const li = document.createElement("li");
-    const taskText = document.createElement("span");
-    const taskDate = document.createElement("span");
-    const taskInfoWrapper = document.createElement("div");
-    const btnWrapper = document.createElement("div");
-    const btnDelete = document.createElement("button");
-    const btnDone = document.createElement("button");
-    const btnEdit = document.createElement("button");
-    const taskPriority = document.createElement("span");
-    const btnPriority = document.createElement("button");
-    const taskDeadline = document.createElement("span");
-    const today = getTodayString();
-    const isOverdue = task.deadline && !task.done && task.deadline < today;
-    const isEditing = editingTaskId === task.id;
-
-    let highlightedText = task.text;
-    if (searchQuery !== "") {
-      highlightedText = task.text.replace(
-        new RegExp(escapeRegExp(searchQuery), "gi"),
-        function (match) {
-          return `<mark>${match}</mark>`;
-        }
-      );
-    }
-
-    li.className = "tasks-list__item";
-    if (task.id === enteringTaskId) {
-      li.classList.add("is-entering");
-    }
-    if (task.id === toggledTaskId) {
-      li.classList.add("is-toggled");
-    }
-    if (isOverdue) {
-      li.classList.add("tasks-list__item--overdue");
-    }
-    taskInfoWrapper.className = "tasks__info";
-    btnWrapper.className = "tasks-list__buttons";
-
-    taskPriority.className = "tasks__priority";
-    taskPriority.textContent = task.priority;
-
-
-    if (task.priority === "low") {
-      taskPriority.classList.add("tasks__priority--low");
-    };
-    if (task.priority === "medium") {
-      taskPriority.classList.add("tasks__priority--medium");
-    };
-    if (task.priority === "high") {
-      taskPriority.classList.add("tasks__priority--high");
-    }
-
-    taskText.className = "tasks__text";
-    if (isEditing) {
-      const editWrapper = document.createElement("div");
-      const editTextInput = document.createElement("input");
-      const editPrioritySelect = document.createElement("select");
-      const editDeadlineInput = document.createElement("input");
-      const btnSaveEdit = document.createElement("button");
-      const btnCancelEdit = document.createElement("button");
-
-      editPrioritySelect.classList.add("tasks__edit-select");
-      ["low", "medium", "high"].forEach(function (priorityValue) {
-        const option = document.createElement("option");
-
-        option.value = priorityValue;
-        option.textContent = priorityValue;
-
-        if (priorityValue === task.priority) {
-          option.selected = true;
-        }
-        editPrioritySelect.append(option);
-      })
-
-      editWrapper.classList.add("tasks__edit-wrapper");
-
-      editTextInput.value = task.text;
-      editTextInput.classList.add("tasks__edit-input");
-
-      editDeadlineInput.type = "date";
-      editDeadlineInput.value = task.deadline;
-      editDeadlineInput.classList.add("tasks__edit-input");
-
-
-      btnSaveEdit.textContent = "Сохранить";
-      btnSaveEdit.classList.add("btn", "btn-item", "btn-success", "btn--icon", "btn-save");
-      btnSaveEdit.addEventListener("click", function () {
-        const trimmedText = editTextInput.value.trim();
-
-        if (trimmedText === "") {
-          alert("Название задачи не может быть пустым");
-          return;
-        }
-
-        const newDeadline = editDeadlineInput.value;
-
-        if (!isValidDeadline(newDeadline)) {
-          alert("Введите реальную дату в формате YYYY-MM-DD!");
-          return;
-        }
-
-        const today = getTodayString();
-
-        if (newDeadline !== "" && newDeadline < today) {
-          alert("Нельзя выбрать дату в прошлом");
-          return;
-        }
-
-
-        tasks = tasks.map(function (item) {
-          if (item.id === task.id) {
-            return {
-              ...item,
-              text: trimmedText,
-              priority: editPrioritySelect.value,
-              deadline: newDeadline,
-            };
-          }
-          return item;
-        });
-
-        editingTaskId = null;
-        saveTasks();
-        renderTasks();
-      });
-
-      editTextInput.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-          btnSaveEdit.click();
-        }
-      });
-
-      btnCancelEdit.textContent = "Отмена";
-      btnCancelEdit.classList.add("btn", "btn-item", "btn-secondary", "btn--icon", "btn-cancel");
-      btnCancelEdit.addEventListener("click", function () {
-        editingTaskId = null;
-        renderTasks();
-      });
-
-      editWrapper.append(editTextInput, editPrioritySelect, editDeadlineInput, btnSaveEdit, btnCancelEdit);
-      taskInfoWrapper.append(editWrapper);
-    } else {
-      taskText.innerHTML = highlightedText;
-      taskInfoWrapper.append(taskText);
-    }
-
-    taskDate.className = "tasks__date";
-    taskDate.textContent = `Создано: ${task.createdAt}`;
-
-    if (task.deadline) {
-      taskDeadline.className = "tasks__deadline";
-      taskDeadline.textContent = `Дедлайн: ${task.deadline}`;
-      if (isOverdue === true) {
-        taskDeadline.textContent = `Просрочено: ${task.deadline}`;
-      }
-    }
-
-    btnDelete.textContent = "Удалить";
-    btnDelete.classList.add("btn", "btn-item", "btn-danger", "btn--icon", "btn-delete");
-    btnDelete.setAttribute("aria-label", `Удалить задачу: ${task.text}`);
-    btnDelete.addEventListener("click", function () {
-      const isConfirmed = confirm("Удалить задачу?");
-      if (!isConfirmed) {
-        return;
-      }
-      li.classList.add("is-leaving");
-      li.addEventListener("animationend", function () {
-        tasks = tasks.filter(function (item) {
-          return item.id !== task.id;
-        });
-        saveTasks();
-        renderTasks();
-      }, { once: true });
-    });
-
-    btnPriority.addEventListener("click", function () {
-      tasks = tasks.map(function (item) {
-        if (item.id === task.id) {
-          let nextPriority;
-          if (item.priority === "low") {
-            nextPriority = "medium";
-          } else if (item.priority === "medium") {
-            nextPriority = "high";
-          } else {
-            nextPriority = "low";
-          }
-          return {
-            ...item,
-            priority: nextPriority,
-          };
-        }
-        return item;
-      });
-      saveTasks();
-      renderTasks();
-    });
-    btnPriority.textContent = "Сменить приоритет";
-    btnPriority.classList.add("btn", "btn-item", "btn-secondary", "btn--icon", "btn-priority");
-
-    btnDone.textContent = "Готово";
-    btnDone.classList.add("btn", "btn-item", "btn-success", "btn--icon", "btn-done");
-    btnDone.setAttribute("aria-label", `${task.done ? "Отметить как невыполненную" : "Отметить как выполненную"}: ${task.text}`);
-    btnDone.addEventListener("click", function () {
-      toggledTaskId = task.id;
-      tasks = tasks.map(function (item) {
-        if (item.id === task.id) {
-          return {
-            ...item,
-            done: !item.done
-          };
-        }
-        return item;
-      });
-      saveTasks();
-      renderTasks();
-    });
-    if (task.done) {
-      li.classList.add("done");
-    }
-
-    btnEdit.textContent = "Редактировать";
-    btnEdit.classList.add("btn", "btn-item", "btn-secondary", "btn--icon", "btn-edit");
-    btnEdit.addEventListener("click", function () {
-      editingTaskId = task.id;
-      renderTasks();
-    });
-
-
-    if (!isEditing) {
-      btnWrapper.append(btnDone, btnDelete, btnPriority, btnEdit);
-      taskInfoWrapper.append(taskPriority, taskDate, taskDeadline);
-    }
-    if (isEditing) {
-      li.append(taskInfoWrapper);
-    } else {
-      li.append(taskInfoWrapper, btnWrapper);
-    }
-    taskList.append(li);
+  sortedTasks.forEach(function (task) {
+    taskList.append(createTaskElement(task));
   });
 
   enteringTaskId = null;
@@ -882,3 +1001,8 @@ searchInput.addEventListener("input", function () {
 loadTasks();
 loadUiState();
 renderTasks();
+
+
+
+
+
